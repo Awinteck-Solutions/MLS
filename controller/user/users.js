@@ -10,9 +10,6 @@ var salt = bcrypt.genSaltSync(10);
 var { getRandomInt } = require('../../config/helpers')
 const { uploadFile } = require('../../config/s3')
 
-const userModel = require('../../models/user/userModel')
-const UserDB = new userModel();
-
 
 const User = require('../../scheme/userModel')
 

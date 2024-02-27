@@ -1,9 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const CourseModel = require('../../models/user/courseModel')
-const CourseDB = new CourseModel()
-
-
 const Course = require('../../scheme/courseModel')
 const Enrolled = require('../../scheme/enrollModel')
 
