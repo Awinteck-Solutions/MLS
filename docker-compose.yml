@@ -1,0 +1,29 @@
+version: "3.8"
+
+services: 
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports: 
+      - 4000:4000
+    volumes: 
+      - .:/app
+      - '/app/node_modules'
+    depends_on: 
+      - mysql_server
+  
+  mysql_server:
+    image: mysql:8.0
+    environment:
+      - MYSQL_DATABASE=taxlawgh
+      - MYSQL_USER=admin
+      - MYSQL_PASSWORD=root
+      - MYSQL_ROOT_PASSWORD=root
+    volumes:
+      - taxlaw-data:/var/lib/mysql
+    ports: 
+      - 3307:3307
+    
+volumes:
+  taxlaw-data:

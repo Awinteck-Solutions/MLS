@@ -3,18 +3,26 @@ const router = express.Router();
 const CourseModel = require('../../models/user/courseModel')
 const CourseDB = new CourseModel()
 
+
+const Course = require('../../scheme/courseModel')
+const Enrolled = require('../../scheme/enrollModel')
+
+
 router.get('/all', (req, res) => {
     try {
-        CourseDB.getAllCourse((response) => {
-            if (response.status) {
-                return res.status(200).json({
-                    ...response
-                })
-            } else {
-                return res.status(404).json({
-                    ...response
-                })
-            }
+        Course.find({status:"ACTIVE"})
+        .then((result) => {
+            return res.status(201).json({
+                status:true,
+                message: 'Course list success',
+                response: result
+            });
+        }).catch((error) => {
+            return res.status(404).json({
+                status: false,
+                message: 'Course list failed',
+                other: error
+            });
         })
         
     } catch (error) {
@@ -28,16 +36,19 @@ router.get('/all', (req, res) => {
 router.get('/single/:id', (req, res) => {
     let { id } = req.params;
     try {
-        CourseDB.getSingleCourse(id,(response) => {
-            if (response.status) {
-                return res.status(200).json({
-                    ...response
-                })
-            } else {
-                return res.status(404).json({
-                    ...response
-                })
-            }
+        Course.findOne({ _id: id })
+        .then((result) => {
+            return res.status(201).json({
+                status:true,
+                message: 'Course single success',
+                response: result
+            });
+        }).catch((error) => {
+            return res.status(404).json({
+                status: false,
+                message: 'Course single failed',
+                other: error
+            });
         })
     } catch (error) {
         res.status(500).json({
@@ -48,20 +59,24 @@ router.get('/single/:id', (req, res) => {
 })
 
 
-router.get('/user/:id', (req, res) => {
-    let { id } = req.params;
-    try {
-        CourseDB.getUserCourses(id,(response) => {
-            if (response.status) {
-                return res.status(200).json({
-                    ...response
-                })
-            } else {
-                return res.status(404).json({
-                    ...response
-                })
-            }
+router.get('/user/:email', (req, res) => {
+    let { email } = req.params;
+    try { 
+        Enrolled.find({ email })
+        .then((result) => {
+            return res.status(201).json({
+                status:true,
+                message: 'My Courses',
+                response: result
+            });
+        }).catch((error) => {
+            return res.status(404).json({
+                status: false,
+                message: 'Courses failed',
+                other: error
+            });
         })
+
     } catch (error) {
         res.status(500).json({
             status: false,

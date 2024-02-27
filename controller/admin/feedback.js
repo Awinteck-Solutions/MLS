@@ -1,22 +1,25 @@
 const express = require('express');
 const router = express.Router();
-const feedbackModel = require('../../models/admin/feedBackModel')
-const FeedbackDB = new feedbackModel()
+
+const Feedback = require('../../scheme/feedbackModel')
 
 // -------------------------- GET ALL FEEDBACK
 router.get('/all', (req, res) => {
-  try {
-    FeedbackDB.getAll((response) => {
-          if (response.status) {
-              return res.status(200).json({
-                  ...response
-              })
-          } else {
-              return res.status(404).json({
-                  ...response
-              })
-          }
-      })
+    try {
+        Feedback.find()
+        .then((result) => {
+            return res.status(200).json({
+                status:true,
+                message: 'Feedback success',
+                response: result
+            });
+        }).catch((error) => {
+            return res.status(404).json({
+                status: false,
+                message: 'Feedback failed',
+                other: error
+            });
+        })
   } catch (error) {
       res.status(500).json({
           status: false,
@@ -32,17 +35,20 @@ router.get('/:id', (req, res) => {
         res.status(400).json({error: 'Missing fields'})
     }
   try {
-    FeedbackDB.getSingle(id,(response) => {
-          if (response.status) {
-              return res.status(200).json({
-                  ...response
-              })
-          } else {
-              return res.status(404).json({
-                  ...response
-              })
-          }
-      })
+        Feedback.findOne({ _id: id })
+        .then((result) => {
+            return res.status(201).json({
+                status:true,
+                message: 'Feedback success',
+                response: result
+            });
+        }).catch((error) => {
+            return res.status(404).json({
+                status: false,
+                message: 'Feedback failed',
+                other: error
+            });
+        })
   } catch (error) {
       res.status(500).json({
           status: false,
@@ -57,18 +63,25 @@ router.post('/add', (req, res) => {
     if (!type || !user_id || !phone || !message) {
         res.status(400).json({error: 'Missing fields'})
     }
-  try {
-    FeedbackDB.add(type,user_id,phone,message,(response) => {
-          if (response.status) {
-              return res.status(200).json({
-                  ...response
-              })
-          } else {
-              return res.status(404).json({
-                  ...response
-              })
-          }
-      })
+    try {
+        const feedback = Feedback({
+            type,phone,message, user:user_id
+        })
+        feedback.save()
+        .then((result) => {
+            return res.status(201).json({
+                status:true,
+                message: 'Feedback success',
+                response: result
+            });
+        }).catch((error) => {
+            return res.status(404).json({
+                status: false,
+                message: 'Feedback failed',
+                other: error
+            });
+        })
+
   } catch (error) {
       res.status(500).json({
           status: false,
@@ -84,17 +97,20 @@ router.get('/delete/:id', (req, res) => {
         res.status(400).json({error: 'Missing fields'})
     }
   try {
-    FeedbackDB.deleteFeedback(id,(response) => {
-          if (response.status) {
-              return res.status(200).json({
-                  ...response
-              })
-          } else {
-              return res.status(404).json({
-                  ...response
-              })
-          }
-      })
+    Feedback.deleteOne({ _id: id })
+    .then((result) => {
+        return res.status(201).json({
+            status:true,
+            message: 'Feedback delete success',
+            response: result
+        });
+    }).catch((error) => {
+        return res.status(404).json({
+            status: false,
+            message: 'Feedback delete failed',
+            other: error
+        });
+    })
   } catch (error) {
       res.status(500).json({
           status: false,
@@ -109,18 +125,21 @@ router.post('/update-status', (req, res) => {
     if (!id || !status) {
         res.status(400).json({error: 'Missing fields'})
     }
-  try {
-    FeedbackDB.updateStatusFeedback(id,status,(response) => {
-          if (response.status) {
-              return res.status(200).json({
-                  ...response
-              })
-          } else {
-              return res.status(404).json({
-                  ...response
-              })
-          }
-      })
+    try {
+        Feedback.findOneAndUpdate({ _id: id },{status},{upsert: false})
+    .then((result) => {
+        return res.status(201).json({
+            status:true,
+            message: 'Feedback status success',
+            response: result
+        });
+    }).catch((error) => {
+        return res.status(404).json({
+            status: false,
+            message: 'Feedback status failed',
+            other: error
+        });
+    })
   } catch (error) {
       res.status(500).json({
           status: false,

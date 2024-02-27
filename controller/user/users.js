@@ -14,6 +14,8 @@ const userModel = require('../../models/user/userModel')
 const UserDB = new userModel();
 
 
+const User = require('../../scheme/userModel')
+
 
 //Set up middlewares
 router.use(bodyparser.json());
@@ -33,29 +35,27 @@ const upload = multer({ storage: multer.memoryStorage() })
         const hashedpassword = bcrypt.hashSync(password, salt);
 
         //generate OTP code 
-        var OTP = getRandomInt(999,9999);
-        console.log('OTP', OTP)
+        var otp = getRandomInt(999,9999);
     
         // Register new user 
-        UserDB.register(firstname,lastname,email,hashedpassword,OTP,
-            (resp)=>{
-                if(resp.status ==true){
-                    console.log('User Registered');
-                    res.status(201).json({
-                        status:true,
-                        message: 'New user registered',
-                        user: resp.response
-                    });
-                    return;
-                }else{
-                    res.status(404).json({
-                        status: false,
-                        message: 'Unsuccessful registration',
-                        other: resp.message
-                    });
-                    return;
-                }
-            })
+
+        const user = User({
+            firstname, lastname, email,otp,
+            password: hashedpassword
+        })
+        user.save().then((result) => {
+            return res.status(201).json({
+                status:true,
+                message: 'New User registered',
+                user: result
+            });
+        }).catch((error) => {
+            return res.status(404).json({
+                status: false,
+                message: 'Unsuccessful registration',
+                other: error
+            });
+        })
     });
 
     // =======================LOGIN=======================
@@ -70,40 +70,39 @@ const upload = multer({ storage: multer.memoryStorage() })
             })
          
         }
-           UserDB.find_user(email, (response)=>{
-                if(response.status==true){
-                    bcrypt.compare(password, response.response.password).then((result)=>{
-                    if(result ==true){
-                        console.log('bcrypt message', result)
-                         //sending response 
-                        return res.json({
-                            status: true,
-                            message: response.message,
-                            response: response.response
-                        }) 
-                    }else{
-                        res.status(404).json({
-                            status: false, 
-                            message: 'password incorrect!', 
-                        })
-                    }
-               }).catch((err)=>{ 
-                   res.status(404).json({
-                    status: false, 
-                    message: 'password error!',
-                    other:response.message, 
-                })
-                return;
-               })
-            }
-            else{
-                res.status(404).json({
-                    status: false,
-                    message: "User doesn't exist!",
-                    other:response.message
-                }) 
-            } 
-        });
+        User.findOne({ email })
+        .then((response) => {
+            console.log('result :>> ', response);
+            let remotePassword = response.password;
+            bcrypt.compare(password, remotePassword).then((result)=>{
+                if(result ==true){
+                    console.log('bcrypt message', result)
+                     //sending response 
+                    return res.json({
+                        status: true,
+                        message: 'Login success',
+                        response
+                    })
+                }else{
+                    res.status(404).json({
+                        status: false, 
+                        message: 'password incorrect!', 
+                    })
+                }
+           }).catch((err)=>{ 
+               res.status(404).json({
+                status: false, 
+                message: 'password error!',
+            })
+            return;
+           })
+            
+        }).catch((error) => {
+            res.status(404).json({
+                status: false, 
+                message: 'password incorrect!', 
+            })
+    })
          
     });
 
@@ -119,20 +118,19 @@ const upload = multer({ storage: multer.memoryStorage() })
             })
          
         }
-           UserDB.update(user_id,firstname,lastname, (response)=>{
-                if(response.status==true){
-                    res.status(200).json({
-                        status: true,
-                        message: response.message
-                    }) 
-                }
-                else{
-                    res.status(404).json({
-                        status: false,
-                        message: response.message
-                    }) 
-                } 
-        });
+        User.updateOne({_id:user_id}, {firstname,lastname}, {upsert:false})
+        .then((result) => {
+            return res.status(201).json({
+                status:true,
+                message: 'User update success', 
+            });
+        }).catch((error) => {
+            return res.status(404).json({
+                status: false,
+                message: 'User update failed',
+                other: error
+            });
+        })
          
     });
 
@@ -145,56 +143,54 @@ const upload = multer({ storage: multer.memoryStorage() })
                 message:"email can't be empty"
             })
         }
-        UserDB.find_otpCode(email, (response) => {
-            if (response.status) {
-                let otp_code = response.response.otp_code;
-                messenger(email, otp_code, (mesRes) => {
-                    if (mesRes.status === true) {
-                        return res.status(200).json({
-                            status: true,
-                            message: 'Reset Password code sent to your Email',
-                            response: response.response
-                        })
-                    } else {
-                        return res.status(404).json({
-                            status: false,
-                            message: 'User did not recieve code, try again'
-                        })
-                    }
-                })
-               
-            } else {
-                return res.status(403).json({
-                    status: false,
-                    message: response.message,
-                })
-            }
+        User.findOne({email})
+        .then((result) => {
+            let otp = result.otp;
+            messenger(email, otp, (mesRes) => {
+                if (mesRes.status === true) {
+                    return res.status(200).json({
+                        status: true,
+                        message: 'Reset Password code sent to your Email',
+                        response: response.response
+                    })
+                } else {
+                    return res.status(404).json({
+                        status: false,
+                        message: 'User did not recieve code, try again'
+                    })
+                }
+            })
+        }).catch((error) => {
+            return res.status(404).json({
+                status: false,
+                message: 'User update failed',
+                other: error
+            });
         })
     })
 
     // =======================RESET_PASSWORD=======================
     router.post('/resetpassword', (req, res) => {
-        let { otp_code, password } = req.body;
-        if (!otp_code && !password) {
+        let { otp, password } = req.body;
+        if (!otp && !password) {
             return res.status(401).json({
                 status: false,
                 message:"otp_code/password can't be empty"
             })
         }
         let hashedpassword = bcrypt.hashSync(password, 10);
-        UserDB.reset_password(otp_code,hashedpassword, (response) => {
-            if (response.status) {
-                return res.status(200).json({
-                    status: true,
-                    message: response.message,
-                    response: response.response
-                })
-            } else {
-                return res.status(403).json({
-                    status: false,
-                    message: response.message,
-                })
-            }
+        User.updateOne({otp}, {password:hashedpassword}, {upsert:false})
+        .then((result) => {
+            return res.status(201).json({
+                status:true,
+                message: 'User update password success', 
+            });
+        }).catch((error) => {
+            return res.status(404).json({
+                status: false,
+                message: 'User update password failed',
+                other: error
+            });
         })
     })
 
@@ -210,24 +206,19 @@ const upload = multer({ storage: multer.memoryStorage() })
             const result = await uploadFile(file)
             if (result) {
                 let image = `/res/${result.Key}`
-                    UserDB.upload_profile(user_id, image, (response)=>{
-                        if(response.status ==true){
-                            res.status(201).json({
-                                status: true,
-                                image,
-                                message: response.message,
-                                other: 'Updated successfully'
-                            });
-                            return;
-                        }else{
-                            res.status(404).json({
-                                status: false,
-                                message: response.message
-                            });
-                            return;
-                        }
-                    }) 
-               
+                User.updateOne({_id:user_id}, {image}, {upsert:true})
+                .then((result) => {
+                    return res.status(201).json({
+                        status:true,
+                        message: 'User update success', 
+                    });
+                }).catch((error) => {
+                    return res.status(404).json({
+                        status: false,
+                        message: 'User update failed',
+                        other: error
+                    });
+                })
             }else{
                 console.log('result null')
                 res.status(400).json({
@@ -254,19 +245,18 @@ const upload = multer({ storage: multer.memoryStorage() })
             })
         }
         let hashedpassword = bcrypt.hashSync(password, 10);
-        UserDB.change_password(user_id,hashedpassword, (response) => {
-            if (response.status) {
-                return res.status(200).json({
-                    status: true,
-                    message: response.message,
-                    response: response.response
-                })
-            } else {
-                return res.status(403).json({
-                    status: false,
-                    message: response.message,
-                })
-            }
+        User.updateOne({_id:user_id}, {password:hashedpassword}, {upsert:false})
+        .then((result) => {
+            return res.status(201).json({
+                status:true,
+                message: 'User update success', 
+            });
+        }).catch((error) => {
+            return res.status(404).json({
+                status: false,
+                message: 'User update failed',
+                other: error
+            });
         })
     })
 
@@ -279,19 +269,19 @@ const upload = multer({ storage: multer.memoryStorage() })
                 message:"user id can't be empty"
             })
         }
-        UserDB.find_user_by_id(id, (response) => {
-            if (response.status) {
-                return res.status(200).json({
-                    status: true,
-                    message: response.message,
-                    response: response.response
-                })
-            } else {
-                return res.status(403).json({
-                    status: false,
-                    message: response.message,
-                })
-            }
+        User.findOne({_id:id})
+        .then((result) => {
+            return res.status(201).json({
+                status:true,
+                message: 'User success', 
+                response:result
+            });
+        }).catch((error) => {
+            return res.status(404).json({
+                status: false,
+                message: 'User failed',
+                other: error
+            });
         })
     })
 
@@ -304,18 +294,18 @@ const upload = multer({ storage: multer.memoryStorage() })
                 message:"user id can't be empty"
             })
         }
-        UserDB.delete(id, (response) => {
-            if (response.status) {
-                return res.status(200).json({
-                    status: true,
-                    message: response.message
-                })
-            } else {
-                return res.status(403).json({
-                    status: false,
-                    message: response.message,
-                })
-            }
+        User.deleteOne({_id:id})
+        .then((result) => {
+            return res.status(201).json({
+                status:true,
+                message: 'User delete success', 
+            });
+        }).catch((error) => {
+            return res.status(404).json({
+                status: false,
+                message: 'User delete failed',
+                other: error
+            });
         })
     })
 

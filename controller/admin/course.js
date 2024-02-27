@@ -2,26 +2,18 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer')
 const bodyparser = require('body-parser')
-const nodemailer = require('nodemailer'); 
 
-const { uploadFile, getFileStream } = require('../../config/s3')
+const Course = require('../../scheme/courseModel')
 
-const courseModel = require('../../models/admin/courseModel')
-const CourseDB = new courseModel()
+
+const { uploadFile } = require('../../config/s3')
+
 //Set up middlewares
 router.use(bodyparser.json());
 router.use(bodyparser.urlencoded({ extended: false }));
 
 //Image upload - multer config
-var timestamp = new Date().getMilliseconds() 
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-      cb(null, 'public/users/images/')
-    },
-    filename: function (req, file, cb) {
-      cb(null, "course_"+timestamp+'_'+file.originalname)
-    }
-})
+
 const upload = multer({ storage: multer.memoryStorage() })
 
 // --------------------------COURSE SECTION------------------------------
@@ -30,25 +22,31 @@ const upload = multer({ storage: multer.memoryStorage() })
 // -------------------------- ADD COURSE
 router.post('/add', upload.single('upload'), async (req, res) => {
     const file = req.file
-    const { title,desc,link,price,category,status } = req.body;
-    if (!file || !title || !status) return res.status(400).json({
+    const { title,desc,link,price,category,status,authorId } = req.body;
+    if (!file || !title || !status || !authorId) return res.status(400).json({
         error: 'Missing fields'
     });
     try {
         let result = await uploadFile(file)
         if (result) {
             let thumbnail = `/res/${result.Key}`
-            CourseDB.addCourse(title,desc,thumbnail,link,price,category,status,(response) => {
-                if (response.status) {
-                    return res.status(200).json({
-                        ...response
-                    })
-                } else {
-                    return res.status(404).json({
-                        ...response
-                    })
-                }
-            }) 
+            const course = Course({
+                title, desc, thumbnail, link, price, category, status,
+                author:authorId
+            })
+            course.save().then((result) => {
+                return res.status(201).json({
+                    status:true,
+                    message: 'New Course added',
+                    response: result
+                });
+            }).catch((error) => {
+                return res.status(404).json({
+                    status: false,
+                    message: 'Course adding failed',
+                    other: error
+                });
+            })
         } else {
             res.status(400).json({
                 status: false,
@@ -75,17 +73,21 @@ router.post('/update', async (req, res) => {
     });
 
     try { 
-        CourseDB.updateCourse(id,title,desc,link,price,category,status,(response) => {
-                if (response.status) {
-                    return res.status(200).json({
-                        ...response
-                    })
-                } else {
-                    return res.status(404).json({
-                        ...response
-                    })
-                }
-            }) 
+        Course.findOneAndUpdate({ _id: id }, { title, description:desc, link, price, category, status }, { upsert: false })
+            .then((result) => {
+                return res.status(201).json({
+                    status:true,
+                    message: 'Course update',
+                    response: result
+                });
+            }).catch((error) => {
+                return res.status(404).json({
+                    status: false,
+                    message: 'Course updating failed',
+                    other: error
+                });
+            })
+        
     } catch (error) {
         console.log('error :>> ', error);
         res.status(500).json({
@@ -108,21 +110,22 @@ router.post('/update/thumbnail', upload.single('upload'), async (req, res)=>{
         let result = await uploadFile(file)
         if (result) {
             let thumbnail = `/res/${result.Key}`
-            CourseDB.updateCourseThumbnail(id, thumbnail, (response)=>{
-                if(response.status ==true){
-                    res.status(201).json({
-                        status: true,
-                        message: response.message,
-                    });
-                    return;
-                }else{
-                    res.status(404).json({
-                        status: false,
-                        message: response.message
-                    });
-                    return;
-                }
-            }) 
+            Course.findOneAndUpdate({ _id: id }, { thumbnail }, { upsert: true })
+                .then((result) => {
+                    console.log('thumbnail :>> ', thumbnail);
+                    
+                return res.status(201).json({
+                    status:true,
+                    message: 'Course image update',
+                    response: result
+                });
+            }).catch((error) => {
+                return res.status(404).json({
+                    status: false,
+                    message: 'Course image updating failed',
+                    other: error
+                });
+            })
         }
     }
     catch (e){
@@ -142,17 +145,19 @@ router.get('/delete/:id', (req, res) => {
         res.status(400).json({error: 'Missing fields'})
     }
   try {
-      CourseDB.deleteCourse(id,(response) => {
-          if (response.status) {
-              return res.status(200).json({
-                  ...response
-              })
-          } else {
-              return res.status(404).json({
-                  ...response
-              })
-          }
-      })
+    Course.deleteOne({ _id: id })
+    .then((result) => {
+        return res.status(201).json({
+            status:true,
+            message: 'Course delete success'
+        });
+    }).catch((error) => {
+        return res.status(404).json({
+            status: false,
+            message: 'Course delete failed',
+            other: error
+        });
+    })
   } catch (error) {
       res.status(500).json({
           status: false,
@@ -168,19 +173,51 @@ router.post('/update/status', (req, res) => {
         res.status(400).json({error: 'Missing fields'})
     }
   try {
-      CourseDB.updateStatus(id,status, (response) => {
-          if (response.status) {
-              return res.status(200).json({
-                  ...response
-              })
-          } else {
-              return res.status(404).json({
-                  ...response
-              })
-          }
-      })
+    Course.findOneAndUpdate({ _id: id }, { status }, { upsert: false })
+    .then((result) => {
+        return res.status(201).json({
+            status:true,
+            message: 'Course status update',
+            response: result
+        });
+    }).catch((error) => {
+        return res.status(404).json({
+            status: false,
+            message: 'Course status updating failed',
+            other: error
+        });
+    })
   } catch (error) {
       res.status(500).json({
+          status: false,
+          message: "System Error"
+      })
+  }
+})
+
+// -------------------------- UPDATE ARCHIVE COURSE
+router.post('/update/achive', (req, res) => {
+    let { id,archived } = req.body;
+    if (!id || !archived) {
+       return res.status(400).json({error: 'Missing fields'})
+    }
+  try {
+    Course.findOneAndUpdate({ _id: id }, { archived }, { upsert: false })
+    .then((result) => {
+        return res.status(201).json({
+            status:true,
+            message: 'Course archived update',
+            response: result
+        });
+    }).catch((error) => {
+        return res.status(404).json({
+            status: false,
+            message: 'Course archived updating failed',
+            other: error
+        });
+    })
+  } catch (error) {
+      return res.status(500).json({
           status: false,
           message: "System Error"
       })

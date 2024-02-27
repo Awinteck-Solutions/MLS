@@ -1,11 +1,12 @@
 const multer = require('multer')
 const express = require('express'); 
 const router = express.Router();
-const lessonModel = require('../../models/admin/lessonModel')
-const LessonDB = new lessonModel()
 const { uploadFile } = require('../../config/s3')
-var { getRandomInt } = require('../../config/helpers')
  
+
+const Lesson = require('../../scheme/lessonModel')
+
+
 require('dotenv').config()
 //Image upload - multer config
 var timestamp = new Date().getMilliseconds() 
@@ -62,18 +63,20 @@ router.post('/upload', upload.single('upload'), async (req, res) => {
             if (result) {
                 let pdf = `/res/${result.Key}`
                 console.log('result', result)
-                LessonDB.updateLessonPdf(lesson_id,pdf,(response) => {
-                    if (response.status) {
+                Lesson.findOneAndUpdate({_id:lesson_id}, {pdf}, {upsert:true})
+                    .then((result) => {
                         return res.status(200).json({
-                            ...response,
-                            pdf
-                        })
-                    } else {
+                            status:true,
+                            message: 'Lesson update success',
+                            response: result
+                        });
+                    }).catch((error) => {
                         return res.status(404).json({
-                            ...response
-                        })
-                    }
-                }) 
+                            status: false,
+                            message: 'Lesson update failed',
+                            other: error
+                        });
+                    })
             } else {
                 console.log('result null')
                 res.status(400).json({
@@ -81,46 +84,6 @@ router.post('/upload', upload.single('upload'), async (req, res) => {
                     message: "PDF upload failed"
                 })
             }
-        } catch (error) {
-            console.log('error :>> ', error);
-            res.status(500).json({
-                status: false,
-                message: "System Error"
-            })
-        }
-    })
-    router.post('/add-pdf1', upload.single('upload'), async (req, res) => {
-        const file = req.file
-        const { lesson_id } = req.body;
-
-        if (!file || !lesson_id ) return res.status(400).json({
-            error: 'Missing fields'
-        });
-        try {
-             await uploadFile(file)
-                .then((result) => {
-                    let pdf = `/res/${result.Key}`
-                    console.log('result', result)
-                    LessonDB.updateLessonPdf(lesson_id,pdf,(response) => {
-                        if (response.status) {
-                            return res.status(200).json({
-                                ...response,
-                                pdf
-                            })
-                        } else {
-                            return res.status(404).json({
-                                ...response
-                            })
-                        }
-                    }) 
-                }).catch((error) => {
-                    console.log('result null',error)
-                    res.status(400).json({
-                        status: false,
-                        message: "PDF upload failed"
-                    })
-            })
-           
         } catch (error) {
             console.log('error :>> ', error);
             res.status(500).json({
@@ -143,16 +106,19 @@ router.post('/upload', upload.single('upload'), async (req, res) => {
             if (result) {
                 let video = `/res/${result.Key}`
                 console.log('result', result)
-                LessonDB.updateLessonVideo(lesson_id,video,(response) => {
-                    if (response.status) {
-                        return res.status(200).json({
-                          ...response,video
-                        })
-                    } else {
-                        return res.status(404).json({
-                            ...response
-                        })
-                    }
+                Lesson.findOneAndUpdate({_id:lesson_id}, {video}, {upsert:true})
+                .then((result) => {
+                    return res.status(200).json({
+                        status:true,
+                        message: 'Lesson update success',
+                        response: result
+                    });
+                }).catch((error) => {
+                    return res.status(404).json({
+                        status: false,
+                        message: 'Lesson update failed',
+                        other: error
+                    });
                 })
             } else {
                 console.log('result null')
@@ -171,27 +137,34 @@ router.post('/upload', upload.single('upload'), async (req, res) => {
 // -------------------------- ADD LESSON
     
     router.post('/add', async (req, res) => {
-        let { course_id, title, desc } = req.body;
+        let { course_id, title, desc, authorId } = req.body;
 
-        if (!course_id || !title || !desc) {
+        if (!course_id || !title || !desc || !authorId) {
             res.status(400).json({error: 'Missing fields'})
         }
         try {
-            var _id = getRandomInt(999, 9999);
-
-            console.log(course_id,'course_id')
-            
-            LessonDB.addLesson(_id,title,desc,course_id,(response) => {
-                if (response.status) {
-                    return res.status(200).json({
-                    ...response,
-                    })
-                } else {
-                    return res.status(404).json({
-                        ...response
-                    })
-                }
+            console.log(course_id, 'course_id')
+            const lesson = Lesson({
+                course:course_id,
+                title,
+                description: desc,
+                author:authorId
             })
+            
+            lesson.save()
+                .then((result) => {
+                    return res.status(200).json({
+                        status:true,
+                        message: 'Lesson saved success',
+                        response: result
+                    });
+                }).catch((error) => {
+                    return res.status(404).json({
+                        status: false,
+                        message: 'Lesson saved failed',
+                        other: error
+                    });
+                })
       } catch (error) {
           res.status(500).json({
               status: false,
@@ -209,17 +182,20 @@ router.post('/upload', upload.single('upload'), async (req, res) => {
         }
 
         try {
-            LessonDB.updateLesson(id,title,desc,(response) => {
-                if (response.status) {
+            Lesson.findOneAndUpdate({_id:id}, {id, title, description:desc}, {upsert:true})
+                .then((result) => {
                     return res.status(200).json({
-                        ...response
-                    })
-                } else {
+                        status:true,
+                        message: 'Lesson update success',
+                        response: result
+                    });
+                }).catch((error) => {
                     return res.status(404).json({
-                        ...response
-                    })
-                }
-            })
+                        status: false,
+                        message: 'Lesson update failed',
+                        other: error
+                    });
+                })
         } catch (error) {
            return res.status(500).json({
                 status: false,
@@ -235,17 +211,19 @@ router.post('/upload', upload.single('upload'), async (req, res) => {
             res.status(400).json({error: 'Missing fields'})
         }
       try {
-          LessonDB.deleteLesson(id,(response) => {
-              if (response.status) {
-                  return res.status(200).json({
-                      ...response
-                  })
-              } else {
-                  return res.status(404).json({
-                      ...response
-                  })
-              }
-          })
+        Lesson.deleteOne({_id:id})
+        .then((result) => {
+            return res.status(200).json({
+                status:true,
+                message: 'Lesson delete success', 
+            });
+        }).catch((error) => {
+            return res.status(404).json({
+                status: false,
+                message: 'Lesson delete failed',
+                other: error
+            });
+        })
       } catch (error) {
           res.status(500).json({
               status: false,
@@ -254,24 +232,27 @@ router.post('/upload', upload.single('upload'), async (req, res) => {
       }
   })
 
-// -------------------------- UPDATE PDF
+// -------------------------- GET ONE LESSON
     router.get('/:id', (req, res) => {
         let { id } = req.params;
         if (!id) {
             res.status(400).json({error: 'Missing fields'})
         }
       try {
-          LessonDB.getSingleLesson(id,(response) => {
-              if (response.status) {
-                  return res.status(200).json({
-                      ...response
-                  })
-              } else {
-                  return res.status(404).json({
-                      ...response
-                  })
-              }
-          })
+            Lesson.findOne({_id:id})
+            .then((result) => {
+                return res.status(200).json({
+                    status:true,
+                    message: 'Lesson success',
+                    response: result
+                });
+            }).catch((error) => {
+                return res.status(404).json({
+                    status: false,
+                    message: 'Lesson failed',
+                    other: error
+                });
+            })
       } catch (error) {
           res.status(500).json({
               status: false,

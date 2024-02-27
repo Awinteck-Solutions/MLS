@@ -2,11 +2,8 @@ const express = require('express')
 const router = express.Router()
 const bcrypt = require('bcryptjs');
 var salt = bcrypt.genSaltSync(10);
-const {getRandomInt} = require('../../config/helpers')
 
-const adminModel = require('../../models/admin/adminModel')
-const AdminDB = new adminModel();
-
+const Admin = require('../../scheme/adminModel')
 
     // =======================REGISTER=======================
     router.post('/register', (req, res) => {
@@ -14,33 +11,34 @@ const AdminDB = new adminModel();
         // get values in request
         let {email, password}  = req.body;
     
+        if (!email || !password ) return res.status(400).json({
+            error: 'Missing fields'
+        });
+
         //Hashing the password
         const hashedpassword = bcrypt.hashSync(password, salt);
 
-        //generate OTP code 
-        var OTP = getRandomInt(999,9999);
-        console.log('OTP', OTP)
     
         // Register new user 
-        AdminDB.register_user(email,hashedpassword,
-            (resp)=>{
-                if(resp.status ==true){
-                    console.log('User Registered');
-                    res.status(201).json({
-                        status:true,
-                        message: 'New Admin registered',
-                        user: resp.response
-                    });
-                    return;
-                }else{
-                    res.status(404).json({
-                        status: false,
-                        message: 'Unsuccessful registration',
-                        other: resp.message
-                    });
-                    return;
-                }
-            })
+        const admin = Admin({
+            email: email,
+            password: hashedpassword
+        })
+        
+        admin.save().then((result) => {
+            return res.status(201).json({
+                status:true,
+                message: 'New Admin registered',
+                user: result
+            });
+        }).catch((error) => {
+            return res.status(404).json({
+                status: false,
+                message: 'Unsuccessful registration',
+                other: error
+            });
+        })
+
     });
 
     // =======================LOGIN=======================
@@ -53,19 +51,21 @@ const AdminDB = new adminModel();
                 status: false, 
                 message: 'Enter all login details!'
             })
-         
         }
-           AdminDB.get_user(email, (response)=>{
-                if(response.status==true){
-                    bcrypt.compare(password, response.response.password).then((result)=>{
+
+        Admin.findOne({ email })
+            .then((response) => {
+                console.log('result :>> ', response);
+                let remotePassword = response.password;
+                bcrypt.compare(password, remotePassword).then((result)=>{
                     if(result ==true){
                         console.log('bcrypt message', result)
                          //sending response 
                         return res.json({
                             status: true,
-                            message: response.message,
-                            response: response.response
-                        }) 
+                            message: 'Login success',
+                            response
+                        })
                     }else{
                         res.status(404).json({
                             status: false, 
@@ -76,21 +76,19 @@ const AdminDB = new adminModel();
                    res.status(404).json({
                     status: false, 
                     message: 'password error!',
-                    other:response.message, 
                 })
                 return;
                })
-            }
-            else{
+                
+            }).catch((error) => {
                 res.status(404).json({
-                    status: false,
-                    message: "Admin doesn't exist!",
-                    other:response.message
-                }) 
-            } 
-        });
-         
+                    status: false, 
+                    message: 'password incorrect!', 
+                })
+        })
+          
     });
+
 
 
 
