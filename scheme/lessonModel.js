@@ -4,15 +4,16 @@ const Schema = mongoose.Schema;
 const lessonSchema = new Schema({
     course: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Course'
+        ref: 'Course',
+        required: true
     },
     title: {
         type: String,
         required: true
     },
-    description: String,
-    video: String,
-    pdf: String,
+    description: {type: String, default: null},
+    video: {type: String, default: null},
+    pdf: {type: String, default: null},
     status: {
         type: String,
         enum : ['ACTIVE','DEACTIVE'],

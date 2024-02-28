@@ -124,7 +124,6 @@ router.post('/send/csv', upload.single('upload'), (req, res) => {
                 })
             }
         })
-        
     } catch (error) {
         console.log('error :>> ', error);
         return res.status(404).json({

@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-
+const multer = require('multer')
 const Enrolled = require('../../scheme/enrollModel')
 const User = require('../../scheme/userModel')
-
-
+const { readCSV } = require('../../config/helpers')
+const upload = multer({ storage: multer.memoryStorage() })
 
 // ENROLL SINGLE USER
 router.post('/add/one', (req, res) => {
@@ -102,6 +102,52 @@ router.post('/add/many', (req, res) => {
         });
     })
 })
+
+// ENROLL MULTIPLE USERS WITH CSV FILE
+router.post('/add/csv', upload.single('upload'), (req, res) => {
+    let { courseId } = req.body;
+    let file = req.file;
+    if (!file || !courseId) return res.status(400).json({
+        error: 'Missing fields'
+    });
+    
+
+    try {
+        readCSV(file, (response) => {
+            let emails_from_csv = response.emails
+
+            const enrolled = [
+                ...emails_from_csv.map((email) => {
+                    console.log('value :>> ', email);
+                    return { 'email': email, 'course': courseId }
+                })
+            ]
+        
+            Enrolled.insertMany(enrolled).then((result) => {
+                return res.status(201).json({
+                    status:true,
+                    message: 'New user enrolled added',
+                    response: result
+                });
+            }).catch((error) => {
+                return res.status(404).json({
+                    status: false,
+                    message: 'User enrolling failed',
+                    other: error
+                });
+            })
+        
+        })
+    } catch (error) {
+        console.log('error :>> ', error);
+        return res.status(404).json({
+            status: false,
+            message: 'Failed to initial emailing...'
+        })
+    }
+})
+
+
 
 
 // GET ALL ENROLLED USERS BY COURSE

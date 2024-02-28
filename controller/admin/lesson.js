@@ -58,6 +58,7 @@ router.post('/upload', upload.single('upload'), async (req, res) => {
         if (!file || !lesson_id ) return res.status(400).json({
             error: 'Missing fields'
         });
+        
         try {
             const result = await uploadFile(file)
             if (result) {

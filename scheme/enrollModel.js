@@ -4,11 +4,13 @@ const Schema = mongoose.Schema;
 const enrollSchema = new Schema({
     course: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Course'
+        ref: 'Course',
+        required: true
     },
     email: {
         type: mongoose.Schema.Types.String,
-        ref: 'User'
+        ref: 'User',
+        required: true
     },
     // email: String,
     status: {
