@@ -2,7 +2,6 @@ const express = require('express')
 const cors = require('cors')
 const ip = require('ip')
 // const Admin = require('./controllers/admin')
-const Users = require('./controller/user/users')
 const bodyParser = require('body-parser')
 require('dotenv').config();
 const { getFileStream } = require('./config/s3')
@@ -10,12 +9,16 @@ const mongoose = require('mongoose')
 
 
 
+const Users = require('./controller/user/users')
 const courseController = require('./controller/user/courses')
 const lessonController = require('./controller/admin/lesson')
 const adminCourseController = require('./controller/admin/course')
 const adminController = require('./controller/admin/admin')
 const feedbackController = require('./controller/admin/feedback')
 const categoryController = require('./controller/admin/category')
+const enrollController = require('./controller/admin/enrolment')
+const adminUsersController = require('./controller/admin/user')
+const emailController = require('./controller/admin/email')
 
 const PORT = process.env.PORT || 4000;
 const app = express();
@@ -28,13 +31,17 @@ app.use('/course', courseController)
 app.use('/lesson', lessonController)
 app.use('/course', adminCourseController)
 app.use('/admin', adminController)
+app.use('/admin/users', adminUsersController)
 app.use('/feedback', feedbackController)
 app.use('/category', categoryController)
+app.use('/enroll', enrollController)
+app.use('/email', emailController)
+app.use('/user', Users)
 
 app.use(cors({
     origin: '*'
 }));
-app.use('/user', Users)
+
 // app.use('/admin', Admin)
 
 app.get('/', (req,res)=>{

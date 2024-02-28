@@ -3,8 +3,9 @@ const Schema = mongoose.Schema;
 
 
 const emailSchema = new Schema({
-    email: { type: String, required: true },
-    message: String,
+    recipients: { type: Array, required: true },
+    subject: { type: String, required: true},
+    body: { type: String, required: true },
     status: {
         type: String,
         enum : ['SENT','FAILED','PENDING'],
@@ -13,7 +14,8 @@ const emailSchema = new Schema({
     author: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Admin'
-    }
+    },
+    failedEmails: Array
 },  {timestamps: true})
 
 const Email = mongoose.model('Email', emailSchema);

@@ -68,14 +68,12 @@ router.post('/update/status/', async (req, res) => {
             .then((result) => {
                 return res.status(200).json({
                     status:true,
-                    message: 'User status update success',
-                    response: result
+                    message: 'User status update success'
                 });
             }).catch((error) => {
                 return res.status(404).json({
                     status: false,
-                    message: 'User status update failed',
-                    other: error
+                    message: 'User status update failed'
                 });
             })
   } catch (error) {
@@ -97,14 +95,12 @@ router.get('/delete/:id', async (req, res) => {
             .then((result) => {
                 return res.status(200).json({
                     status:true,
-                    message: 'User delete success',
-                    response: result
+                    message: 'User delete success'
                 });
             }).catch((error) => {
                 return res.status(404).json({
                     status: false,
-                    message: 'User delete failed',
-                    other: error
+                    message: 'User delete failed'
                 });
             })
   } catch (error) {

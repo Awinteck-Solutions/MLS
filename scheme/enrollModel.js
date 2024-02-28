@@ -6,11 +6,11 @@ const enrollSchema = new Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Course'
     },
-    // userId: {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: 'User'
-    // },
-    email: String,
+    email: {
+        type: mongoose.Schema.Types.String,
+        ref: 'User'
+    },
+    // email: String,
     status: {
         type: String,
         enum : ['ACTIVE','DEACTIVE'],

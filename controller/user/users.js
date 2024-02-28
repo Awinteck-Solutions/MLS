@@ -144,13 +144,16 @@ const upload = multer({ storage: multer.memoryStorage() })
         .then((result) => {
             let otp = result.otp;
             messenger(email, otp, (mesRes) => {
-                if (mesRes.status === true) {
+                console.log('mesRes',mesRes)
+                if (mesRes.status) {
+                    console.log('truemesRes',mesRes)
                     return res.status(200).json({
                         status: true,
                         message: 'Reset Password code sent to your Email',
-                        response: response.response
+                        otp
                     })
                 } else {
+                    console.log('falsemesRes',mesRes)
                     return res.status(404).json({
                         status: false,
                         message: 'User did not recieve code, try again'
@@ -158,6 +161,7 @@ const upload = multer({ storage: multer.memoryStorage() })
                 }
             })
         }).catch((error) => {
+            console.log('error :>> ', error);
             return res.status(404).json({
                 status: false,
                 message: 'User update failed',
@@ -325,32 +329,11 @@ let transporter = nodemailer.createTransport({
 
 
 
-const messenger =(email, token,callback) => {
-
-    // let email_phone = '233547785025'
-    // let email_phone = 'awinsamp@yahoo.com'
-    let regex = /\S+@\S+\.\S+/;
-    let checkEmail =    regex.test(email)
-    
-    console.log('checkEmail :>> ', checkEmail);
-
-    if (checkEmail) {
-        email(email, token, (response) => {
-            return callback({
-                checkEmail,
-                ...response
-            })
-            // return res.send(response.message)
-            
-        })
-    }
-}
-
 
  
-const email = (email, token, callback) => {
+const messenger = (email, token, callback) => {
     let mailOptions = {
-        from: '"MSL Business" <support@MSLBusiness.com>',
+        from: '"MSL Business" <support@storykids.app>',
         to: email,
         subject: 'MSL Business Password Reset',
         html: `Your password reset code: ${token}.
@@ -372,6 +355,7 @@ const email = (email, token, callback) => {
         }
     })
 }
+
 
 
 module.exports = router
