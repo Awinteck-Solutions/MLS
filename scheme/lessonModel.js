@@ -17,7 +17,7 @@ const lessonSchema = new Schema({
     status: {
         type: String,
         enum : ['ACTIVE','DEACTIVE'],
-        default: 'DEACTIVE',
+        default: 'ACTIVE',
     },
     author: {
         type: mongoose.Schema.Types.ObjectId,

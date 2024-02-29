@@ -141,7 +141,7 @@ router.post('/upload', upload.single('upload'), async (req, res) => {
         let { course_id, title, desc, authorId } = req.body;
 
         if (!course_id || !title || !desc || !authorId) {
-            res.status(400).json({error: 'Missing fields'})
+            return res.status(400).json({error: 'Missing fields'})
         }
         try {
             console.log(course_id, 'course_id')
@@ -167,7 +167,7 @@ router.post('/upload', upload.single('upload'), async (req, res) => {
                     });
                 })
       } catch (error) {
-          res.status(500).json({
+          return res.status(500).json({
               status: false,
               message: "System Error"
           })
