@@ -31,7 +31,7 @@ router.post('/add', upload.single('upload'), async (req, res) => {
         if (result) {
             let thumbnail = `/res/${result.Key}`
             const course = Course({
-                title, desc, thumbnail, link, price, category, status,
+                title, description:desc, thumbnail, link, price, category, status,
                 author:authorId
             })
             course.save().then((result) => {

@@ -14,6 +14,27 @@ class lesson_db {
           }).format(date)
     }
 
+    insertMany(users) { 
+        users = [
+            { username: 'John', email: 'john@gmail.com' },
+            {username: 'Ama', email: 'ama@gmail.com'}
+        ]
+
+        let allValues = ''
+
+        users.map((data,index) => { 
+            // (john, john@gmail.com)
+            if (index >= 1) { 
+                allValues += ','
+            }
+            allValues += '(' + data.username + ',' + data.email + ')'
+        })
+
+        allValues = '(john, john@gmail.com), (ama, ama@yahoo.com)'
+
+        let query = 'Insert into  table (username, email) values ' + allValues
+    }
+
 
     // --------------------------LESSON SECTION------------------------------
 
