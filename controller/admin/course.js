@@ -29,7 +29,7 @@ router.get('/course/all', (req, res) => {
             // { $match: { _id: new mongoose.Types.ObjectId(id), status: 'ACTIVE'} },
             {
                 $project: {
-                    _id: 1, title: 1, description:1, thumbnail:1, link:1,price:1,category:1,archived:1, status: 1, course: 1, createdAt: 1,
+                    _id: 1, title: 1, description:1, thumbnail:1, link:1,price:1,category:1,archived:1, status: 1, course: 1, createdAt: 1,updatedAt:1,
                     "enrolls": {
                         "$filter": {
                             "input": "$enrolls",
