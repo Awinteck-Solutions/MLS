@@ -88,20 +88,51 @@ router.get('/single/:id', (req, res) => {
 router.get('/user/:email', (req, res) => {
     let { email } = req.params;
     try { 
-        Enrolled.find({ email })
-        .then((result) => {
-            return res.status(201).json({
-                status:true,
-                message: 'My Courses',
-                response: result
-            });
+        Enrolled.find({email, status: 'ACTIVE'}).populate('course').then(result => {
+            console.log(result); 
+            return res.status(200).json({
+                        status:true,
+                        message: 'Enrolled all User',
+                        result: (result.filter((value) => value.course.status=='ACTIVE')).map((value)=> value.course)
+                    });
         }).catch((error) => {
+            console.log('error :>> ', error);
             return res.status(404).json({
                 status: false,
-                message: 'Courses failed',
-                other: error
+                message: 'Enrolled users failed',
             });
         })
+
+        // Enrolled.aggregate([ 
+        //     { $sort: { _id: 1 } }, 
+        //     { $lookup: { from: 'courses', localField: 'course', foreignField: '_id', as: 'courses' } },
+        //     { $match: { email: email, status: 'ACTIVE'} },
+        //     {
+        //         $project: {
+        //             _id: 1, title: 1, description:1, thumbnail:1, link:1,price:1,category:1,archived:1, status: 1, course: 1, createdAt: 1,
+        //             "courses": {
+        //                 "$filter": {
+        //                     "input": "$courses",
+        //                     "as": "courses",
+        //                     "cond": { "$eq": [ "$$courses.status", "ACTIVE" ] }
+        //                 }
+        //              }
+        //         }
+        //     }
+        // ])
+        // .then((result) => {
+        //     return res.status(201).json({
+        //         status:true,
+        //         message: 'My Courses',
+        //         response: result
+        //     });
+        // }).catch((error) => {
+        //     return res.status(404).json({
+        //         status: false,
+        //         message: 'Courses failed',
+        //         other: error
+        //     });
+        // })
 
     } catch (error) {
         res.status(500).json({
