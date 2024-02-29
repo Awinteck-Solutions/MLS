@@ -2,9 +2,9 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer')
 const bodyparser = require('body-parser')
+const mongoose = require('mongoose')
 
 const Course = require('../../scheme/courseModel')
-
 
 const { uploadFile } = require('../../config/s3')
 
@@ -18,6 +18,57 @@ const upload = multer({ storage: multer.memoryStorage() })
 
 // --------------------------COURSE SECTION------------------------------
   
+
+
+
+router.get('/course/all', (req, res) => {
+    try {
+        Course.aggregate([ 
+            { $sort: { _id: 1 } }, 
+            { $lookup: { from: 'enrolls', localField: '_id', foreignField: 'course', as: 'enrolls' } },
+            // { $match: { _id: new mongoose.Types.ObjectId(id), status: 'ACTIVE'} },
+            {
+                $project: {
+                    _id: 1, title: 1, description:1, thumbnail:1, link:1,price:1,category:1,archived:1, status: 1, course: 1, createdAt: 1,
+                    "enrolls": {
+                        "$filter": {
+                            "input": "$enrolls",
+                            "as": "enrolls",
+                            "cond": { "$eq": [ "$$enrolls.status", "ACTIVE" ] }
+                        }
+                     }
+                }
+            }
+            // { $unwind: '$user' }
+        ]).then((result) => {
+            return res.status(201).json({
+                status:true,
+                message: 'Course list success',
+                response: result.map((value) => {
+                    return {
+                        ...value,
+                        enrolls: value.enrolls.length
+                    }
+                })
+            });
+        }).catch((error) => {
+            return res.status(404).json({
+                status: false,
+                message: 'Course list failed',
+                other: error
+            });
+        })
+        
+    } catch (error) {
+        console.log('error :>> ', error);
+        res.status(500).json({
+            status: false,
+            message: "System Error"
+        })
+    }
+})
+
+
 
 // -------------------------- ADD COURSE
 router.post('/add', upload.single('upload'), async (req, res) => {
