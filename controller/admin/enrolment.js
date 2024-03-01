@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer')
+const mongoose = require('mongoose')
 const Enrolled = require('../../scheme/enrollModel')
 const User = require('../../scheme/userModel')
 const { readCSV } = require('../../config/helpers')
@@ -160,6 +161,7 @@ router.get('/course/:id', (req, res) =>{
         { $sort: { _id: 1 } }, 
         { $project: { _id: 1, email: 1, status: 1, course: 1, createdAt: 1 } },
         { $lookup: { from: 'users', localField: 'email', foreignField: 'email', as: 'user' } },
+        { $match: { course: new mongoose.Types.ObjectId(id), status: 'ACTIVE'} },
         // { $unwind: '$user' }
     ]).then(result => {
         console.log(result); 
