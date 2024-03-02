@@ -171,7 +171,7 @@ router.get('/course/:id', (req, res) =>{
             result: result.map((value) => {
                 let user = value.user[0];
                 let formatedData = {
-                    _id: value.id,
+                    _id: value._id,
                     courseId: value.course,
                     email: value.email,
                     hasAccount: user ? true : false,
