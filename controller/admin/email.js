@@ -140,13 +140,13 @@ router.post('/send/csv', upload.single('upload'), (req, res) => {
 let transporter = nodemailer.createTransport({
     // host: 'server1.web-hosting.com',
     // host: 'mx2-hosting.jellyfish.systems',
-    host:'storykids.app',
+    host:'info@mslelearning.com',
     port:465,
     secure: true,
     authMethod:"PLAIN",
     auth: { 
-        user: 'support@storykids.app',
-        pass: '2(zwc{r5+Nad'
+        user: 'info@mslelearning.com',
+        pass: '?#BCkT_jN$K8'
     },            
 })
 

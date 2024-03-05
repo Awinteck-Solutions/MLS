@@ -315,15 +315,14 @@ const upload = multer({ storage: multer.memoryStorage() })
 
 
 let transporter = nodemailer.createTransport({
-    // host: 'server1.web-hosting.com',
-    // host: 'mx2-hosting.jellyfish.systems',
-    host:'storykids.app',
+    host:'mslelearning.com',
     port:465,
     secure: true,
     authMethod:"PLAIN",
     auth: { 
-        user: 'support@storykids.app',
-        pass: '2(zwc{r5+Nad'
+        user: 'support@api.mslelearning.com',
+        // pass: '?#BCkT_jN$K8'
+        pass: '{Dqj+vK{Iroe'
     },            
 })
 
@@ -333,7 +332,7 @@ let transporter = nodemailer.createTransport({
  
 const messenger = (email, token, callback) => {
     let mailOptions = {
-        from: '"MSL Business" <support@storykids.app>',
+        from: '"MSL Business" <support@api.mslelearning.com>',
         to: email,
         subject: 'MSL Business Password Reset',
         html: `Your password reset code: ${token}.

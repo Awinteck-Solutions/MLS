@@ -7,12 +7,33 @@ const Enrolled = require('../../scheme/enrollModel')
 
 router.get('/all', (req, res) => {
     try {
-        Course.find({status:"ACTIVE"})
-        .then((result) => {
+        Course.aggregate([ 
+            { $sort: { _id: 1 } }, 
+            { $lookup: { from: 'lessons', localField: '_id', foreignField: 'course', as: 'lessons' } },
+            { $match: { status: 'ACTIVE'} },
+            {
+                $project: {
+                    _id: 1, title: 1, description:1, thumbnail:1, link:1,price:1,category:1,archived:1, status: 1, course: 1, author:1, createdAt: 1,updatedAt:1,
+                    "lessons": {
+                        "$filter": {
+                            "input": "$lessons",
+                            "as": "lessons",
+                            "cond": { "$eq": [ "$$lessons.status", "ACTIVE" ] }
+                        }
+                     }
+                }
+            }
+            // { $unwind: '$user' }
+        ]).then((result) => {
             return res.status(201).json({
                 status:true,
                 message: 'Course list success',
-                response: result
+                response: result.map((value) => {
+                    return {
+                        ...value,
+                        lessons: value.lessons.length
+                    }
+                })
             });
         }).catch((error) => {
             return res.status(404).json({

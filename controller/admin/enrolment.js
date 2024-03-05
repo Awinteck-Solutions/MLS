@@ -164,7 +164,7 @@ router.get('/course/:id', (req, res) =>{
         { $match: { course: new mongoose.Types.ObjectId(id), status: 'ACTIVE'} },
         // { $unwind: '$user' }
     ]).then(result => {
-        console.log(result); 
+        console.log(result);
         return res.status(200).json({
                     status:true,
                     message: 'Enrolled all User',

@@ -19,6 +19,7 @@ const categoryController = require('./controller/admin/category')
 const enrollController = require('./controller/admin/enrolment')
 const adminUsersController = require('./controller/admin/user')
 const emailController = require('./controller/admin/email')
+const requestsController = require('./controller/admin/requests')
 
 const PORT = process.env.PORT || 4000;
 const app = express();
@@ -37,6 +38,7 @@ app.use('/category', categoryController)
 app.use('/enroll', enrollController)
 app.use('/email', emailController)
 app.use('/user', Users)
+app.use('/request', requestsController)
 
 app.use(cors({
     origin: '*'
