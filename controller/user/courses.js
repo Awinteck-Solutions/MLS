@@ -116,6 +116,13 @@ router.get('/admin/single/:id', (req, res) => {
             {
                 $project: {
                     _id: 1, title: 1, description:1, thumbnail:1, link:1,price:1,category:1,archived:1, status: 1, course: 1, createdAt: 1,
+                    "lessons": {
+                        "$filter": {
+                            "input": "$lessons",
+                            "as": "lessons",
+                            "cond": { "$eq": [ "$$lessons.status", "ACTIVE" ] }
+                        }
+                     }
                 }
             }
             // { $unwind: '$user' }
