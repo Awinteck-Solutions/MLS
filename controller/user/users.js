@@ -320,7 +320,7 @@ let transporter = nodemailer.createTransport({
     secure: true,
     authMethod:"PLAIN",
     auth: { 
-        user: 'support@api.mslelearning.com',
+        user: 'info@mslelearning.com',
         // pass: '?#BCkT_jN$K8'
         pass: '{Dqj+vK{Iroe'
     },            
@@ -332,7 +332,7 @@ let transporter = nodemailer.createTransport({
  
 const messenger = (email, token, callback) => {
     let mailOptions = {
-        from: '"MSL Business" <support@api.mslelearning.com>',
+        from: '"MSL Business" <info@mslelearning.com>',
         to: email,
         subject: 'MSL Business Password Reset',
         html: `Your password reset code: ${token}.

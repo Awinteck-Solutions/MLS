@@ -106,6 +106,52 @@ router.get('/single/:id', (req, res) => {
 })
 
 
+router.get('/admin/single/:id', (req, res) => {
+    let { id } = req.params;
+    try {
+        Course.aggregate([ 
+            { $sort: { _id: 1 } }, 
+            { $lookup: { from: 'lessons', localField: '_id', foreignField: 'course', as: 'lessons' } },
+            { $match: { _id: new mongoose.Types.ObjectId(id)} },
+            {
+                $project: {
+                    _id: 1, title: 1, description:1, thumbnail:1, link:1,price:1,category:1,archived:1, status: 1, course: 1, createdAt: 1,
+                }
+            }
+            // { $unwind: '$user' }
+        ])
+            .then((result) => {
+                console.log('result :>> ', result);
+                if (result.length > 0) { 
+                    return res.status(201).json({
+                        status:true,
+                        message: 'Course single success(ADMIN ONLY)',
+                        response: result[0]
+                    });
+                } else {
+                    return res.status(404).json({
+                        status:false,
+                        message: 'Course not found (ADMIN ONLY)'
+                    });
+                }
+        }).catch((error) => {
+            console.log('error :>> ', error);
+            return res.status(404).json({
+                status: false,
+                message: 'Course single failed (ADMIN ONLY)',
+                other: error
+            });
+        })
+    } catch (error) {
+        console.log('error :>> ', error);
+        return res.status(500).json({
+            status: false,
+            message: "System Error"
+        })
+    }
+})
+
+
 router.get('/user/:email', (req, res) => {
     let { email } = req.params;
     try { 
